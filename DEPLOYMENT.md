@@ -6,9 +6,8 @@ Stand: Juni 2026.
 > ⚠️ **Keine Secrets hier ablegen.** Keine API-Tokens, Account-IDs, Passwörter oder
 > personenbezogenen Daten in diese Datei aufnehmen.
 >
-> ℹ️ Werte, die nur im Cloudflare-/GitHub-Dashboard leben (DNS-Records, Custom-Domain-Status,
-> Branch-Protection), sind unten als **Soll-Konfiguration** beschrieben und sollten bei
-> Unsicherheit im jeweiligen Dashboard verifiziert werden.
+> ℹ️ Die Cloudflare-/GitHub-Werte unten entsprechen dem **Ist-Stand (Juni 2026)**.
+> Bei Infrastruktur-Änderungen bitte hier nachziehen.
 
 ---
 
@@ -33,12 +32,16 @@ Stand: Juni 2026.
 
 - Produktions-Standardhost von Cloudflare Pages: `michaelarns-com.pages.dev`
   (zeigt denselben Stand wie `main`).
-- **Regel:** Jeder Branch außer `main` erzeugt automatisch eine Preview unter
-  `<branch>.michaelarns-com.pages.dev`.
+- Beide Production-Domains (`michaelarns.com` und `www.michaelarns.com`) sind **Active**
+  mit aktivem SSL.
+- **Regel:** Jeder Branch außer `main` erzeugt automatisch ein Vorschau-Deployment.
+  Cloudflare vergibt dabei pro Branch eine stabile **Alias-URL** `<branch>.michaelarns-com.pages.dev`
+  (oben verlinkt) sowie pro Commit zusätzlich eine Hash-URL `<hash>.michaelarns-com.pages.dev`.
+  `dev` deployt bereits unter `dev.michaelarns-com.pages.dev`.
 - **Hinweis:** Cloudflare-Pages-Projektnamen erlauben keinen Punkt; der Domainname
   `michaelarns.com` wird daher als Projekt `michaelarns-com` geführt.
 - Eine `staging`-Stufe existiert aktuell **nicht**. Bei Bedarf einen `staging`-Branch
-  anlegen — Cloudflare erzeugt dann automatisch `staging.michaelarns-com.pages.dev`.
+  anlegen — Cloudflare erzeugt dann automatisch die Vorschau `staging.michaelarns-com.pages.dev`.
 
 ---
 
@@ -46,8 +49,9 @@ Stand: Juni 2026.
 
 `main` ist geschützt — **kein direkter Push**, Aktualisierung nur per Pull Request.
 
-1. Auf `dev` entwickeln → prüfen auf `dev.michaelarns-com.pages.dev`
-2. `dev` → `main` per **Pull Request** mergen → geht live auf `michaelarns.com`
+1. Auf `dev` entwickeln → prüfen auf https://dev.michaelarns-com.pages.dev
+2. `dev` → `main` per **Pull Request** mergen (Merge erfordert **1 Approval**) → geht live
+   auf `michaelarns.com`
 
 ```bash
 # Beispiel
@@ -69,7 +73,10 @@ npm run preview    # Build lokal testen
 ```
 
 Empfohlene Laufzeit: **Node.js ≥ 22.12.0** (Cloudflare-Standard, identisch zu den
-Schwester-Repos). Optional eine `.nvmrc` mit `22.12.0` ergänzen.
+Schwester-Repos). Dieses Repo hat **keine** `.nvmrc` und in Cloudflare ist **kein**
+`NODE_VERSION` gesetzt — die Node-Version kommt daher aus dem Cloudflare-Build-System-Default.
+Zum Pinnen empfiehlt sich eine `.nvmrc` mit `22.12.0` (analog zu `greatgap`) oder eine
+`NODE_VERSION`-Variable im Cloudflare-Projekt.
 
 ---
 
@@ -85,12 +92,13 @@ Pfad: Cloudflare Dashboard → Compute → Workers & Pages → **michaelarns-com
 | Build output directory | `dist` |
 | Root directory | (leer) |
 | Production branch | `main` |
-| Preview-Deployments | alle Nicht-Production-Branches |
-| Environment-Variable | `NODE_VERSION = 22.12.0` (in **Production UND Preview** gesetzt) |
+| Preview-Deployments | alle Nicht-Production-Branches („All non-production branches") |
+| Environment-Variablen | **keine gesetzt** — `NODE_VERSION` ist nicht hinterlegt (siehe Hinweis unter „Lokale Entwicklung") |
 
 - **Custom Domains** (Tab „Custom domains"):
-  - Production: `michaelarns.com` und `www.michaelarns.com`
-  - alle Active, SSL aktiv.
+  - `michaelarns.com` — Active, SSL aktiv
+  - `www.michaelarns.com` — Active, SSL aktiv
+  - keine `staging.`/`dev.`-Custom-Domains (kein `staging` vorgesehen)
 - **Rollback:** Tab „Deployments" → altes Production-Deployment → „Rollback".
 
 ---
@@ -100,33 +108,36 @@ Pfad: Cloudflare Dashboard → Compute → Workers & Pages → **michaelarns-com
 DNS wird über **Cloudflare** verwaltet (Zone aktiv, Nameserver bei Cloudflare).
 Pfad: Dashboard → Domain `michaelarns.com` → DNS → Records.
 
-**Web (auf Cloudflare Pages) — Soll-Konfiguration:**
+**Web (auf Cloudflare Pages):**
 
 | Name | Typ | Ziel | Proxy |
 |---|---|---|---|
-| `michaelarns.com` | CNAME | `michaelarns-com.pages.dev` | Proxied |
+| `michaelarns.com` (`@`) | CNAME | `michaelarns-com.pages.dev` | Proxied |
 | `www` | CNAME | `michaelarns-com.pages.dev` | Proxied |
 
-> **E-Mail & Verifizierungs-Records NICHT ändern** (z. B. MX, SPF/`TXT`, DMARC,
-> Site-Verification). Die Domain nutzt extern gehostete E-Mail; bestehende Records vor
-> jeder DNS-Änderung im Dashboard prüfen und unverändert lassen — sie sind hier bewusst
-> nicht im Detail abgebildet.
+> **E-Mail & Verifizierung — NICHT ändern** (läuft extern über All-Inkl/Kasserver):
+> MX-Record, SPF (`TXT`) und DMARC (`_dmarc TXT`) sind gesetzt; eine
+> Google-Site-Verification existiert nicht. Die konkreten Zielwerte sind hier bewusst
+> nicht abgebildet.
+>
+> Kein Wildcard-Record und keine alten GitHub-Pages-Records
+> (A `185.199.108–111.153` / CNAME auf `*.github.io`) vorhanden.
 
 ---
 
 ## GitHub — Einstellungen
 
-- **Repo:** `michaelarns/michaelarns.com`, Default-Branch `main`.
-- **Branch Protection auf `main`** (Settings → Branches, Soll-Konfiguration):
-  - Require a pull request before merging — **Required approvals: 0**
-  - Do not allow bypassing the above settings
+- **Repo:** `michaelarns/michaelarns.com`, **public**, Default-Branch `main`.
+- **Branch Protection auf `main`** (Settings → Branches):
+  - Require a pull request before merging — **Required approvals: 1**
+  - „Do not allow bypassing the above settings" — **nicht** aktiviert
   - Force-Pushes blockiert · Löschen von `main` blockiert
   - → kein direkter Commit/Push auf `main`
   - Hinweis: Auf dem **Free-Plan** wird Branch Protection nur bei **öffentlichen** Repos
     erzwungen; für private Repos ist GitHub Pro nötig.
-- **GitHub Pages:** deaktiviert / nicht verwendet.
-- **GitHub-Actions-Deploy-Workflow:** keiner — überflüssig, da Cloudflare automatisch baut.
-  Nicht neu anlegen.
+- **GitHub Pages:** deaktiviert (Branch: None) — nicht verwendet.
+- **GitHub-Actions-Deploy-Workflow:** keiner (kein `.github/workflows/`-Verzeichnis) —
+  überflüssig, da Cloudflare automatisch baut. Nicht neu anlegen.
 
 ---
 
