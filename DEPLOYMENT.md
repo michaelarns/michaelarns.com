@@ -108,9 +108,9 @@ Pfad: Dashboard → Domain `michaelarns.com` → DNS → Records.
 | `www` | CNAME | `michaelarns-com.pages.dev` | Proxied |
 
 > **E-Mail & Verifizierungs-Records NICHT ändern** (z. B. MX, SPF/`TXT`, DMARC,
-> Site-Verification). Die im Footer verlinkte Mailadresse `michael.arns@almato.com` läuft
-> extern. Bestehende Records vor jeder DNS-Änderung im Dashboard prüfen und unverändert
-> lassen — sie sind hier bewusst nicht im Detail abgebildet.
+> Site-Verification). Die Domain nutzt extern gehostete E-Mail; bestehende Records vor
+> jeder DNS-Änderung im Dashboard prüfen und unverändert lassen — sie sind hier bewusst
+> nicht im Detail abgebildet.
 
 ---
 
