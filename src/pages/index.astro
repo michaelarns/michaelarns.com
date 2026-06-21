@@ -1,93 +1,326 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+const name = 'Michael Arns';
+const letters = [...name];
 ---
 
 <Layout>
-  <main>
-    <div class="mark" aria-hidden="true">&#42;</div>
-    <h1>Michael Arns</h1>
-    <p class="tagline">Hier entsteht eine neue Präsenz.</p>
-    <div class="divider" aria-hidden="true"></div>
-  </main>
+  <!-- Animated, mouse-reactive constellation that slowly "builds" itself -->
+  <canvas id="constellation" aria-hidden="true"></canvas>
 
-  <footer>
-    <a href="mailto:michael.arns@almato.com">michaelarns.com</a>
-  </footer>
+  <!-- Subtle drifting aurora + blueprint grid for depth -->
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="grid" aria-hidden="true"></div>
+
+  <!-- Spotlight that follows the cursor -->
+  <div id="spotlight" class="spotlight" aria-hidden="true"></div>
+
+  <div class="stage">
+    <main>
+      <div class="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-label">Im Aufbau</span>
+      </div>
+
+      <div class="mark" aria-hidden="true">&#42;</div>
+
+      <h1 class="name" aria-label={name}>
+        {
+          letters.map((char, i) =>
+            char === ' ' ? (
+              <span class="space" aria-hidden="true">&nbsp;</span>
+            ) : (
+              <span class="letter" style={`--i:${i}`} aria-hidden="true">{char}</span>
+            )
+          )
+        }
+      </h1>
+
+      <p class="tagline">
+        <span id="rotator" class="rotator">Hier entsteht eine neue Präsenz.</span>
+      </p>
+
+      <div class="progress" aria-hidden="true"><span></span></div>
+    </main>
+
+    <footer>
+      <a href="mailto:michael.arns@almato.com">michaelarns.com</a>
+      <span class="sep" aria-hidden="true">·</span>
+      <span class="year">2026</span>
+    </footer>
+  </div>
 </Layout>
 
 <style>
+  .stage {
+    position: relative;
+    z-index: 2;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
   main {
     text-align: center;
-    padding: 2rem;
     position: relative;
-    z-index: 1;
-    animation: rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* ---- Status pill ---- */
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.95rem;
+    margin-bottom: 2.25rem;
+    border: 1px solid rgba(201, 169, 106, 0.28);
+    border-radius: 999px;
+    background: rgba(201, 169, 106, 0.05);
+    backdrop-filter: blur(6px);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent-bright);
+    animation: fade-down 1s ease 0.1s both;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(201, 169, 106, 0.6);
+    animation: ping 2.4s ease-out infinite;
+  }
+
+  /* ---- Brand mark ---- */
   .mark {
-    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
     line-height: 1;
     color: var(--accent);
-    display: inline-block;
-    margin-bottom: 1.75rem;
-    animation: spin 24s linear infinite;
-    user-select: none;
+    display: block;
+    margin: 0 auto 1.25rem;
+    width: max-content;
+    text-shadow: 0 0 24px rgba(201, 169, 106, 0.35);
+    animation: spin 26s linear infinite;
   }
 
-  h1 {
+  /* ---- Kinetic name ---- */
+  .name {
     font-weight: 600;
-    letter-spacing: 0.04em;
-    font-size: clamp(2rem, 6vw, 3.5rem);
-    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+    font-size: clamp(2.6rem, 11vw, 6.5rem);
+    line-height: 1.02;
+    margin-bottom: 1.5rem;
+    color: var(--accent);
   }
 
+  /* Each letter clips its own gradient so transforms stay reliable */
+  .name .letter {
+    display: inline-block;
+    will-change: transform, opacity, filter;
+    background: linear-gradient(
+      100deg,
+      var(--accent-deep) 0%,
+      var(--accent) 38%,
+      var(--accent-bright) 50%,
+      var(--accent) 62%,
+      var(--accent-deep) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation:
+      letter-in 0.85s cubic-bezier(0.22, 1, 0.36, 1)
+        calc(0.35s + var(--i, 0) * 0.05s) both,
+      shimmer-wave 5.5s ease-in-out calc(1.4s + var(--i, 0) * 0.09s) infinite;
+  }
+
+  .name .space {
+    display: inline-block;
+    width: 0.28em;
+  }
+
+  @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+    .name .letter {
+      color: var(--accent);
+      -webkit-text-fill-color: currentColor;
+    }
+  }
+
+  /* ---- Rotating tagline ---- */
   .tagline {
+    min-height: 1.6em;
     color: var(--muted);
-    font-size: clamp(1rem, 2.6vw, 1.25rem);
+    font-size: clamp(0.95rem, 2.4vw, 1.2rem);
     font-weight: 400;
-    letter-spacing: 0.02em;
-    max-width: 30ch;
-    margin: 0 auto;
+    letter-spacing: 0.01em;
   }
 
-  .divider {
-    width: 56px;
-    height: 1px;
-    margin: 2.25rem auto 0;
+  .rotator {
+    display: inline-block;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .rotator.is-out {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  /* ---- Indeterminate progress bar ---- */
+  .progress {
+    position: relative;
+    width: min(280px, 60vw);
+    height: 2px;
+    margin: 2.75rem auto 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+    animation: fade-down 1s ease 0.7s both;
+  }
+
+  .progress span {
+    position: absolute;
+    inset: 0;
+    width: 38%;
+    border-radius: inherit;
     background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0.7;
+    animation: track 2.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
   }
 
+  /* ---- Footer ---- */
   footer {
     position: fixed;
     bottom: 1.75rem;
     left: 0;
     right: 0;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
     color: var(--muted);
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    z-index: 1;
+    z-index: 3;
+    animation: fade-down 1s ease 0.9s both;
   }
 
   footer a {
     color: inherit;
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color 0.25s ease;
   }
 
   footer a:hover {
-    color: var(--accent);
+    color: var(--accent-bright);
   }
 
+  .sep {
+    opacity: 0.5;
+  }
+
+  /* ---- Background layers ---- */
+  #constellation {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    display: block;
+  }
+
+  .aurora {
+    position: fixed;
+    inset: -20%;
+    z-index: 0;
+    background:
+      radial-gradient(38% 42% at 22% 28%, rgba(201, 169, 106, 0.16), transparent 70%),
+      radial-gradient(34% 40% at 78% 32%, rgba(79, 182, 207, 0.1), transparent 70%),
+      radial-gradient(46% 50% at 50% 88%, rgba(201, 169, 106, 0.1), transparent 72%);
+    filter: blur(16px);
+    animation: drift 24s ease-in-out infinite alternate;
+  }
+
+  .grid {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(201, 169, 106, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201, 169, 106, 0.05) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+    mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+    animation: grid-pan 40s linear infinite;
+  }
+
+  .spotlight {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(
+      320px 320px at var(--mx, 50%) var(--my, 40%),
+      rgba(201, 169, 106, 0.1),
+      transparent 65%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  /* ---- Keyframes ---- */
   @keyframes rise {
     from {
       opacity: 0;
-      transform: translateY(16px);
+      transform: translateY(18px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-down {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes letter-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5em) rotate(6deg);
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) rotate(0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes shimmer-wave {
+    0%,
+    100% {
+      filter: brightness(1);
+    }
+    8% {
+      filter: brightness(1.55);
+    }
+    18% {
+      filter: brightness(1);
     }
   }
 
@@ -97,10 +330,297 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
+  @keyframes ping {
+    0% {
+      box-shadow: 0 0 0 0 rgba(201, 169, 106, 0.55);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 10px rgba(201, 169, 106, 0);
+    }
+  }
+
+  @keyframes track {
+    0% {
+      transform: translateX(-110%);
+    }
+    100% {
+      transform: translateX(360%);
+    }
+  }
+
+  @keyframes drift {
+    from {
+      transform: translate3d(-2%, -1%, 0) scale(1);
+    }
+    to {
+      transform: translate3d(2%, 2%, 0) scale(1.08);
+    }
+  }
+
+  @keyframes grid-pan {
+    to {
+      background-position: 64px 64px;
+    }
+  }
+
+  /* ---- Reduced motion ---- */
   @media (prefers-reduced-motion: reduce) {
-    main,
-    .mark {
-      animation: none;
+    *,
+    .name,
+    .mark,
+    .status-dot,
+    .aurora,
+    .grid,
+    .progress span,
+    .name .letter,
+    .name .space {
+      animation: none !important;
     }
   }
 </style>
+
+<script>
+  type Particle = {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    r: number;
+    cool: boolean;
+  };
+
+  type Pulse = { a: number; b: number; t: number; speed: number };
+
+  const prefersReduced = window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches;
+
+  const canvas = document.getElementById('constellation') as HTMLCanvasElement | null;
+  const spotlight = document.getElementById('spotlight');
+  const rotator = document.getElementById('rotator');
+
+  /* --- Rotating tagline --- */
+  if (rotator && !prefersReduced) {
+    const phrases = [
+      'Hier entsteht eine neue Präsenz.',
+      'Etwas Neues nimmt Form an.',
+      'Im Aufbau — bald mehr.',
+    ];
+    let idx = 0;
+    setInterval(() => {
+      rotator.classList.add('is-out');
+      window.setTimeout(() => {
+        idx = (idx + 1) % phrases.length;
+        rotator.textContent = phrases[idx];
+        rotator.classList.remove('is-out');
+      }, 500);
+    }, 4200);
+  }
+
+  /* --- Constellation canvas --- */
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+      let particles: Particle[] = [];
+      let pulses: Pulse[] = [];
+      const linkDist = 130;
+      const mouse = { x: -9999, y: -9999, active: false };
+
+      const initParticles = () => {
+        const count = Math.min(
+          120,
+          Math.max(36, Math.round((width * height) / 15000))
+        );
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.24,
+            vy: (Math.random() - 0.5) * 0.24,
+            r: Math.random() * 1.5 + 0.6,
+            cool: Math.random() < 0.18,
+          });
+        }
+        pulses = [];
+      };
+
+      const resize = () => {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        initParticles();
+      };
+
+      const spawnPulse = () => {
+        if (pulses.length > 6 || particles.length < 2) return;
+        const a = (Math.random() * particles.length) | 0;
+        // find a nearby partner so the pulse rides an existing link
+        let best = -1;
+        let bestD = linkDist * linkDist;
+        for (let k = 0; k < 10; k++) {
+          const b = (Math.random() * particles.length) | 0;
+          if (b === a) continue;
+          const dx = particles[a].x - particles[b].x;
+          const dy = particles[a].y - particles[b].y;
+          const d = dx * dx + dy * dy;
+          if (d < bestD) {
+            bestD = d;
+            best = b;
+          }
+        }
+        if (best >= 0) {
+          pulses.push({ a, b: best, t: 0, speed: 0.012 + Math.random() * 0.01 });
+        }
+      };
+
+      let lastPulse = 0;
+
+      const draw = (now: number) => {
+        ctx.clearRect(0, 0, width, height);
+
+        // move particles
+        for (const p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+          if (p.y < -20) p.y = height + 20;
+          if (p.y > height + 20) p.y = -20;
+
+          // gentle pull toward the cursor
+          if (mouse.active) {
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 180 && dist > 1) {
+              p.x += (dx / dist) * 0.16;
+              p.y += (dy / dist) * 0.16;
+            }
+          }
+        }
+
+        // links between particles
+        for (let i = 0; i < particles.length; i++) {
+          const a = particles[i];
+          for (let j = i + 1; j < particles.length; j++) {
+            const b = particles[j];
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < linkDist) {
+              const alpha = (1 - dist / linkDist) * 0.32;
+              ctx.strokeStyle = `rgba(201, 169, 106, ${alpha})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // links to the cursor (you "build" structure as you move)
+        if (mouse.active) {
+          for (const p of particles) {
+            const dx = p.x - mouse.x;
+            const dy = p.y - mouse.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 200) {
+              const alpha = (1 - dist / 200) * 0.5;
+              ctx.strokeStyle = `rgba(236, 210, 154, ${alpha})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(mouse.x, mouse.y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // nodes
+        for (const p of particles) {
+          ctx.beginPath();
+          ctx.fillStyle = p.cool
+            ? 'rgba(79, 182, 207, 0.8)'
+            : 'rgba(201, 169, 106, 0.85)';
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // energy pulses traveling along links
+        if (now - lastPulse > 900) {
+          spawnPulse();
+          lastPulse = now;
+        }
+        for (let i = pulses.length - 1; i >= 0; i--) {
+          const pl = pulses[i];
+          pl.t += pl.speed;
+          if (pl.t >= 1 || !particles[pl.a] || !particles[pl.b]) {
+            pulses.splice(i, 1);
+            continue;
+          }
+          const a = particles[pl.a];
+          const b = particles[pl.b];
+          const px = a.x + (b.x - a.x) * pl.t;
+          const py = a.y + (b.y - a.y) * pl.t;
+          const glow = Math.sin(pl.t * Math.PI);
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(236, 210, 154, ${glow})`;
+          ctx.shadowColor = 'rgba(236, 210, 154, 0.9)';
+          ctx.shadowBlur = 8;
+          ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        rafId = requestAnimationFrame(draw);
+      };
+
+      let rafId = 0;
+      const start = () => {
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(draw);
+      };
+      const stop = () => cancelAnimationFrame(rafId);
+
+      window.addEventListener('pointermove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        mouse.active = true;
+        if (spotlight) {
+          spotlight.style.setProperty('--mx', e.clientX + 'px');
+          spotlight.style.setProperty('--my', e.clientY + 'px');
+          spotlight.style.opacity = '1';
+        }
+      });
+      window.addEventListener('pointerleave', () => {
+        mouse.active = false;
+        if (spotlight) spotlight.style.opacity = '0';
+      });
+      window.addEventListener('resize', resize);
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stop();
+        else if (!prefersReduced) start();
+      });
+
+      resize();
+      if (prefersReduced) {
+        // render a single calm frame, no animation loop
+        draw(0);
+        stop();
+      } else {
+        start();
+      }
+    }
+  }
+</script>
