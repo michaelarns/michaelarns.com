@@ -1,8 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-
-const name = 'Michael Arns';
-const letters = [...name];
 ---
 
 <Layout>
@@ -23,19 +20,25 @@ const letters = [...name];
         <span class="status-label">Im Aufbau</span>
       </div>
 
-      <div class="mark" aria-hidden="true">&#42;</div>
-
-      <h1 class="name" aria-label={name}>
-        {
-          letters.map((char, i) =>
-            char === ' ' ? (
-              <span class="space" aria-hidden="true">&nbsp;</span>
-            ) : (
-              <span class="letter" style={`--i:${i}`} aria-hidden="true">{char}</span>
-            )
-          )
-        }
-      </h1>
+      <svg
+        class="mark"
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <defs>
+          <linearGradient id="markGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#9c7f4a" />
+            <stop offset="0.5" stop-color="#ecd29a" />
+            <stop offset="1" stop-color="#9c7f4a" />
+          </linearGradient>
+        </defs>
+        <g stroke="url(#markGrad)" stroke-width="11" stroke-linecap="round">
+          <line x1="50" y1="14" x2="50" y2="86" />
+          <line x1="19.8" y1="32" x2="80.2" y2="68" />
+          <line x1="19.8" y1="68" x2="80.2" y2="32" />
+        </g>
+      </svg>
 
       <p class="tagline">
         <span id="rotator" class="rotator">Hier entsteht eine neue Präsenz.</span>
@@ -98,67 +101,24 @@ const letters = [...name];
     animation: ping 2.4s ease-out infinite;
   }
 
-  /* ---- Brand mark ---- */
+  /* ---- Hero brand mark ---- */
   .mark {
-    font-size: clamp(1.6rem, 4vw, 2.4rem);
-    line-height: 1;
-    color: var(--accent);
     display: block;
-    margin: 0 auto 1.25rem;
-    width: max-content;
-    text-shadow: 0 0 24px rgba(201, 169, 106, 0.35);
-    animation: spin 26s linear infinite;
-  }
-
-  /* ---- Kinetic name ---- */
-  .name {
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    font-size: clamp(2.6rem, 11vw, 6.5rem);
-    line-height: 1.02;
-    margin-bottom: 1.5rem;
-    color: var(--accent);
-  }
-
-  /* Each letter clips its own gradient so transforms stay reliable */
-  .name .letter {
-    display: inline-block;
-    will-change: transform, opacity, filter;
-    background: linear-gradient(
-      100deg,
-      var(--accent-deep) 0%,
-      var(--accent) 38%,
-      var(--accent-bright) 50%,
-      var(--accent) 62%,
-      var(--accent-deep) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
+    width: clamp(4.5rem, 15vw, 8.5rem);
+    height: auto;
+    margin: 0 auto 2.25rem;
+    overflow: visible;
+    transform-origin: 50% 50%;
     animation:
-      letter-in 0.85s cubic-bezier(0.22, 1, 0.36, 1)
-        calc(0.35s + var(--i, 0) * 0.05s) both,
-      shimmer-wave 5.5s ease-in-out calc(1.4s + var(--i, 0) * 0.09s) infinite;
-  }
-
-  .name .space {
-    display: inline-block;
-    width: 0.28em;
-  }
-
-  @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
-    .name .letter {
-      color: var(--accent);
-      -webkit-text-fill-color: currentColor;
-    }
+      spin 26s linear infinite,
+      mark-pulse 5.5s ease-in-out infinite;
   }
 
   /* ---- Rotating tagline ---- */
   .tagline {
     min-height: 1.6em;
     color: var(--muted);
-    font-size: clamp(0.95rem, 2.4vw, 1.2rem);
+    font-size: clamp(1rem, 2.6vw, 1.35rem);
     font-weight: 400;
     letter-spacing: 0.01em;
   }
@@ -288,29 +248,13 @@ const letters = [...name];
     }
   }
 
-  @keyframes letter-in {
-    from {
-      opacity: 0;
-      transform: translateY(0.5em) rotate(6deg);
-      filter: blur(6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) rotate(0);
-      filter: blur(0);
-    }
-  }
-
-  @keyframes shimmer-wave {
+  @keyframes mark-pulse {
     0%,
     100% {
-      filter: brightness(1);
+      filter: drop-shadow(0 0 16px rgba(201, 169, 106, 0.25)) brightness(1);
     }
-    8% {
-      filter: brightness(1.55);
-    }
-    18% {
-      filter: brightness(1);
+    50% {
+      filter: drop-shadow(0 0 40px rgba(201, 169, 106, 0.5)) brightness(1.12);
     }
   }
 
@@ -357,14 +301,11 @@ const letters = [...name];
   /* ---- Reduced motion ---- */
   @media (prefers-reduced-motion: reduce) {
     *,
-    .name,
     .mark,
     .status-dot,
     .aurora,
     .grid,
-    .progress span,
-    .name .letter,
-    .name .space {
+    .progress span {
       animation: none !important;
     }
   }
